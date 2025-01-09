@@ -36,7 +36,6 @@ public class BankAccountController {
     @PostMapping("/create_account")
     public ResponseEntity<ApiResponse<BankAccount>> createAccount(@RequestBody Map<String, Object> body) {
         try {
-            // Crear la instancia de BankAccount
             BankAccount newAccount = new BankAccount();
             newAccount.setAccountNumber((String) body.getOrDefault("accountNumber", ""));
             newAccount.setBalance(Double.parseDouble(body.getOrDefault("balance", 0.0).toString()));
@@ -50,12 +49,10 @@ public class BankAccountController {
             newAccount.setDailyLimit(Double.parseDouble(body.getOrDefault("dailyLimit", 0.0).toString()));
             newAccount.setTotalWithdrawnToday(Double.parseDouble(body.getOrDefault("totalWithdrawnToday", 0.0).toString()));
 
-            // Buscar el usuario asociado
             Long userId = Long.parseLong(body.getOrDefault("userId", 0).toString());
             User user = userService.getUserById(userId).getData();
             newAccount.setUser(user);
 
-            // Llamar al servicio para crear la cuenta
             ApiResponse<BankAccount> response = bankAccountService.createAccount(newAccount);
             return ResponseEntity.status(response.getStatus()).body(response);
 

@@ -8,14 +8,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
-public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter implements JwtAuthenticationFilterInterface {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -26,29 +26,46 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     }
 
     @Override
-    public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String authorizationHeader = request.getHeader("Authorization");
+
+        // Verifica si hay un token en la cabecera "Authorization"
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
-            String username = jwtService.extractUsername(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (jwtService.validateToken(token, username)) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            try {
+                // Extrae el nombre de usuario del token
+                String username = jwtService.extractUsername(token);
 
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
+                // Verifica que el usuario no esté ya autenticado en el contexto
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // Valida el token
+                    if (jwtService.validateToken(token, username)) {
+                        // Carga los detalles del usuario
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        // Crea el token de autenticación
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        // Establece el contexto de seguridad
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }
                 }
+            } catch (Exception e) {
+                // Maneja posibles excepciones durante la validación del token
+                System.err.println("Error al validar el token: " + e.getMessage());
             }
         }
-        chain.doFilter(request, response);
+
+        // Continúa con el siguiente filtro en la cadena
+        filterChain.doFilter(request, response);
     }
 }

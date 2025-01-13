@@ -41,7 +41,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BankAccount> bankAccounts;
 
-    // Getters y Setters
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getId() {
         return id;

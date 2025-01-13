@@ -49,7 +49,7 @@ public class BankAccountController {
             newAccount.setDailyLimit(Double.parseDouble(body.getOrDefault("dailyLimit", 0.0).toString()));
             newAccount.setTotalWithdrawnToday(Double.parseDouble(body.getOrDefault("totalWithdrawnToday", 0.0).toString()));
 
-            Long userId = Long.parseLong(body.getOrDefault("userId", 0).toString());
+            long userId = Long.parseLong(body.getOrDefault("userId", 0).toString());
             User user = userService.getUserById(userId).getData();
             newAccount.setUser(user);
 

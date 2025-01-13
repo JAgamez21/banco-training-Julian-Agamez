@@ -19,27 +19,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/h2-console/**", "/login").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .headers(headers -> headers
-                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .formLogin(login -> login
-                    .loginPage("/login")
-                    .usernameParameter("identification")
-                    .passwordParameter("password")
-                    .defaultSuccessUrl("/api/users/get_user/" + login.usernameParameter("identification"), true)
-                    .failureUrl("/login?error=true")
-                    .permitAll()
-            )
-            .logout(logout -> logout
-                    .logoutUrl("/logout")
-                    .logoutSuccessUrl("/login?logout=true")
-                    .permitAll()
-            );
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/h2-console/**", "/login").permitAll() // Acceso público a estas rutas
+                        .anyRequest().authenticated() // Todas las demás rutas requieren autenticación
+                )
+                .headers(headers -> headers
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable) // Deshabilitar protección de frames (para H2 Console)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Añadir el filtro JWT antes del filtro de autenticación
+                .formLogin(formLogin -> formLogin
+                        .loginPage("/login") // Página de inicio de sesión personalizada
+                        .usernameParameter("identification") // Nombre del parámetro para el nombre de usuario
+                        .passwordParameter("password") // Nombre del parámetro para la contraseña
+                        .defaultSuccessUrl("/api/users/get_user/{username}", true) // Redirección al inicio tras éxito
+                        .failureUrl("/login?error=true") // Redirección en caso de error
+                        .permitAll() // Permitir acceso a la página de inicio de sesión
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout") // URL para cerrar sesión
+                        .logoutSuccessUrl("/login?logout=true") // Redirección tras cierre de sesión
+                        .permitAll() // Permitir acceso a la URL de cierre de sesión
+                );
 
         return http.build();
     }
